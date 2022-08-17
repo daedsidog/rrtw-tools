@@ -5,18 +5,15 @@
 #include <dcc/fmt/format.h>
 #include <string>
 
-#ifndef __FILE_STEM__
-#define __FILE_STEM__ __FILE__
-#endif
-#ifndef __FILE_BASE__
-#define __FILE_BASE__ __FILE__
-#endif
 #define STRINGIFY_DETAIL(x) #x
 #define STRINGIFY(x) STRINGIFY_DETAIL(x)
+
+#if defined(__FILE_STEM__) && defined(__FILE_BASE__)
 #ifdef NDEBUG
 #define LOGSRC __FILE_STEM__
 #else
 #define LOGSRC __FILE_BASE__ ":" STRINGIFY(__LINE__)
+#endif
 #endif
 
 #define MAX_STAMP_STRLEN 64
@@ -29,8 +26,9 @@
 #define INF_STAMP dcc::fmt::styled("INFO", dcc::fmt::fg(dcc::fmt::color::white))
 #define DBG_STAMP                                                              \
   dcc::fmt::styled("DEBUG", dcc::fmt::fg(dcc::fmt::color::orange))
-#define SRC_STAMP dcc::fmt::styled(LOGSRC, dcc::fmt::fg(dcc::fmt::color::gray))
 
+#ifdef LOGSRC
+#define SRC_STAMP dcc::fmt::styled(LOGSRC, dcc::fmt::fg(dcc::fmt::color::gray))
 #define logerr(...)                                                            \
   flogmsg(stderr, dcc::fmt::format("[{}] ({}): ", ERR_STAMP, SRC_STAMP),       \
           __VA_ARGS__)
@@ -50,6 +48,24 @@
           __VA_ARGS__)
 #else
 #define logdbg(...) (void)(0)
+#endif
+
+#else
+#define logerr(...)                                                            \
+  flogmsg(stderr, dcc::fmt::format("[{}]: ", ERR_STAMP), __VA_ARGS__)
+#define logwar(...)                                                            \
+  flogmsg(stderr, dcc::fmt::format("[{}]: ", WAR_STAMP), __VA_ARGS__)
+#define logfat(...)                                                            \
+  flogmsg(stderr, dcc::fmt::format("[{}]: ", CRT_STAMP), __VA_ARGS__)
+#define loginf(...)                                                            \
+  flogmsg(stdout, dcc::fmt::format("[{}]: ", INF_STAMP), __VA_ARGS__)
+
+#ifndef NDEBUG
+#define logdbg(...)                                                            \
+  flogmsg(stdout, dcc::fmt::format("[{}]: ", DBG_STAMP), __VA_ARGS__)
+#else
+#define logdbg(...) (void)(0)
+#endif
 #endif
 
 namespace dcc {

@@ -1,44 +1,22 @@
 #include <cassert>
 #include <cstdio>
+#include <dcc/file.hpp>
+#include <dcc/logger.hpp>
 #include <fstream>
 #include <regex>
 #include <sstream>
 #include <unordered_set>
 
 #include "common.hpp"
+#include "dcc/fmt/color.h"
 
 using namespace std;
-
-string freadall(string_view path) {
-  FILE *f = fopen(string(path).c_str(), "r");
-  if (not f) {
-    fmt::print(stderr, "Could not open {}.\n", path);
-    exit(-1);
-  }
-
-  // Determine file size
-  fseek(f, 0, SEEK_END);
-
-  size_t size = ftell(f);
-  rewind(f);
-
-  char *where = new char[size];
-  size_t bytes_read = fread(where, sizeof(char), size, f);
-  string outstr;
-  for (size_t i = 0; i < bytes_read; ++i){
-    if (where[i] == '\0')
-      continue;
-    outstr.push_back(where[i]);
-  }
-  fclose(f);
-  delete[] where;
-  return outstr;
-}
+using namespace dcc;
 
 vector<unit> parse_units(string_view edu_path) {
   ifstream f(edu_path.data());
   if (not f.is_open()) {
-    fmt::print(stderr, "Could not open {}.\n", edu_path);
+    logerr("Could not open {}.", styled(edu_path, fmt::emphasis::underline));
     exit(-1);
   }
 
@@ -54,18 +32,17 @@ vector<unit> parse_units(string_view edu_path) {
     ++lineno;
 
     smatch m;
-    if (parsing_soldiers){
+    if (parsing_soldiers) {
       if (regex_search(line, m, regex("\\{")))
         soldiers_brace_num += 1;
-      else if (regex_search(line, m, regex("\\}"))){
+      else if (regex_search(line, m, regex("\\}"))) {
         soldiers_brace_num -= 1;
         if (soldiers_brace_num == 0)
           parsing_soldiers = false;
-      }
-      else if (soldiers_brace_num == 2 and regex_search(line, m, regex("([\\w\\d_]+)")))
+      } else if (soldiers_brace_num == 2 and
+                 regex_search(line, m, regex("([\\w\\d_]+)")))
         current_unit.soldiers.push_back(m[1]);
-    }
-    else if (regex_search(line, m, regex("dictionary\\s+([\\w\\d_]+)"))) {
+    } else if (regex_search(line, m, regex("dictionary\\s+([\\w\\d_]+)"))) {
       if (not first_unit) {
         assert(not current_unit.dictionary.empty());
         assert(current_unit.lineno != 0);
@@ -98,14 +75,13 @@ vector<unit> parse_units(string_view edu_path) {
         token = regex_replace(token, regex("[\\r\\n\\s]"), "");
         current_unit.owners.push_back(token);
       }
-    }
-    else if (regex_search(line, m, regex("soldiers")))
+    } else if (regex_search(line, m, regex("soldiers")))
       parsing_soldiers = true;
     else if (regex_search(line, m, regex("soldier\\s+([\\d\\w_]+)")))
       current_unit.soldiers.push_back(m[1]);
-    else if (regex_search(line, m, regex("officer\\s+([\\d\\w_]+)"))){
+    else if (regex_search(line, m, regex("officer\\s+([\\d\\w_]+)"))) {
       string officer = m[1];
-      if (not added_officers.contains(officer)){
+      if (not added_officers.contains(officer)) {
         current_unit.officers.push_back(m[1]);
         added_officers.insert(officer);
       }
@@ -118,17 +94,16 @@ vector<unit> parse_units(string_view edu_path) {
     units.push_back(current_unit);
   }
   if (units.empty()) {
-    fmt::print(stderr, "No units were parsed.\n");
+    logerr("No units were parsed.");
     exit(-1);
   }
   return units;
 }
 
-
 unordered_map<string, battle_model> parse_battle_models(string_view dmb_path) {
   ifstream f(dmb_path.data());
   if (not f.is_open()) {
-    fmt::print(stderr, "Could not open {}.\n", dmb_path);
+    logerr("Could not open {}.", styled(dmb_path, fmt::emphasis::underline));
     exit(-1);
   }
 
@@ -149,17 +124,21 @@ unordered_map<string, battle_model> parse_battle_models(string_view dmb_path) {
         battle_models[current_battle_model.dictionary] = current_battle_model;
       } else
         first_battle_model = false;
-      current_battle_model = battle_model {};
+      current_battle_model = battle_model{};
       current_battle_model.lineno = lineno;
       current_battle_model.dictionary = m[1];
-    } else if (regex_search(line, m, regex("^texture\\s*(?:(\\w+)*[\\s,]+)*\\s*([\\w\\d\\.\\/]+)"))) {
+    } else if (regex_search(line, m,
+                            regex("^texture\\s*(?:(\\w+)*[\\s,]+)*\\s*(["
+                                  "\\w\\d\\.\\/]+)"))) {
       string owner = m[1];
       string path = m[2];
       if (owner.empty())
         owner = "default";
       texture t = {.lineno = lineno, .path = path};
       current_battle_model.textures[owner] = t;
-    } else if (regex_search(line, m, regex("^pbr_texture\\s*(?:(\\w+)*[\\s,]+)*\\s*([\\w\\d\\.\\/]+)"))) {
+    } else if (regex_search(line, m,
+                            regex("^pbr_texture\\s*(?:(\\w+)*[\\s,]+)*\\s*(["
+                                  "\\w\\d\\.\\/]+)"))) {
       string owner = m[1];
       string path = m[2];
       if (owner.empty())
@@ -175,7 +154,7 @@ unordered_map<string, battle_model> parse_battle_models(string_view dmb_path) {
     battle_models[current_battle_model.dictionary] = current_battle_model;
   }
   if (battle_models.empty()) {
-    fmt::print(stderr, "No battle models were parsed.\n");
+    logerr("No battle models were parsed.");
     exit(-1);
   }
   return battle_models;

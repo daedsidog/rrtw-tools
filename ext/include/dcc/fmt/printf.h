@@ -10,7 +10,6 @@
 
 #include <algorithm>  // std::max
 #include <limits>     // std::numeric_limits
-#include <ostream>
 
 #include "format.h"
 
@@ -533,8 +532,8 @@ using wprintf_args = basic_format_args<wprintf_context>;
 
 /**
   \rst
-  Constructs an `~fmt::format_arg_store` object that contains references to
-  arguments and can be implicitly converted to `~fmt::printf_args`.
+  Constructs an `~dcc::fmt::format_arg_store` object that contains references to
+  arguments and can be implicitly converted to `~dcc::fmt::printf_args`.
   \endrst
  */
 template <typename... T>
@@ -545,8 +544,8 @@ inline auto make_printf_args(const T&... args)
 
 /**
   \rst
-  Constructs an `~fmt::format_arg_store` object that contains references to
-  arguments and can be implicitly converted to `~fmt::wprintf_args`.
+  Constructs an `~dcc::fmt::format_arg_store` object that contains references to
+  arguments and can be implicitly converted to `~dcc::fmt::wprintf_args`.
   \endrst
  */
 template <typename... T>
@@ -561,7 +560,7 @@ inline auto vsprintf(
     basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args)
     -> std::basic_string<Char> {
   basic_memory_buffer<Char> buffer;
-  vprintf(buffer, to_string_view(fmt), args);
+  vprintf(buffer, detail::to_string_view(fmt), args);
   return to_string(buffer);
 }
 
@@ -571,14 +570,15 @@ inline auto vsprintf(
 
   **Example**::
 
-    std::string message = fmt::sprintf("The answer is %d", 42);
+    std::string message = dcc::fmt::sprintf("The answer is %d", 42);
   \endrst
 */
 template <typename S, typename... T,
           typename Char = enable_if_t<detail::is_string<S>::value, char_t<S>>>
 inline auto sprintf(const S& fmt, const T&... args) -> std::basic_string<Char> {
   using context = basic_printf_context_t<Char>;
-  return vsprintf(to_string_view(fmt), fmt::make_format_args<context>(args...));
+  return vsprintf(detail::to_string_view(fmt),
+                  dcc::fmt::make_format_args<context>(args...));
 }
 
 template <typename S, typename Char = char_t<S>>
@@ -587,7 +587,7 @@ inline auto vfprintf(
     basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args)
     -> int {
   basic_memory_buffer<Char> buffer;
-  vprintf(buffer, to_string_view(fmt), args);
+  vprintf(buffer, detail::to_string_view(fmt), args);
   size_t size = buffer.size();
   return std::fwrite(buffer.data(), sizeof(Char), size, f) < size
              ? -1
@@ -600,14 +600,14 @@ inline auto vfprintf(
 
   **Example**::
 
-    fmt::fprintf(stderr, "Don't %s!", "panic");
+    dcc::fmt::fprintf(stderr, "Don't %s!", "panic");
   \endrst
  */
 template <typename S, typename... T, typename Char = char_t<S>>
 inline auto fprintf(std::FILE* f, const S& fmt, const T&... args) -> int {
   using context = basic_printf_context_t<Char>;
-  return vfprintf(f, to_string_view(fmt),
-                  fmt::make_format_args<context>(args...));
+  return vfprintf(f, detail::to_string_view(fmt),
+                  dcc::fmt::make_format_args<context>(args...));
 }
 
 template <typename S, typename Char = char_t<S>>
@@ -615,7 +615,7 @@ inline auto vprintf(
     const S& fmt,
     basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args)
     -> int {
-  return vfprintf(stdout, to_string_view(fmt), args);
+  return vfprintf(stdout, detail::to_string_view(fmt), args);
 }
 
 /**
@@ -624,31 +624,14 @@ inline auto vprintf(
 
   **Example**::
 
-    fmt::printf("Elapsed time: %.2f seconds", 1.23);
+    dcc::fmt::printf("Elapsed time: %.2f seconds", 1.23);
   \endrst
  */
 template <typename S, typename... T, FMT_ENABLE_IF(detail::is_string<S>::value)>
 inline auto printf(const S& fmt, const T&... args) -> int {
   return vprintf(
-      to_string_view(fmt),
-      fmt::make_format_args<basic_printf_context_t<char_t<S>>>(args...));
-}
-
-template <typename S, typename Char = char_t<S>>
-FMT_DEPRECATED auto vfprintf(
-    std::basic_ostream<Char>& os, const S& fmt,
-    basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args)
-    -> int {
-  basic_memory_buffer<Char> buffer;
-  vprintf(buffer, to_string_view(fmt), args);
-  os.write(buffer.data(), static_cast<std::streamsize>(buffer.size()));
-  return static_cast<int>(buffer.size());
-}
-template <typename S, typename... T, typename Char = char_t<S>>
-FMT_DEPRECATED auto fprintf(std::basic_ostream<Char>& os, const S& fmt,
-                            const T&... args) -> int {
-  return vfprintf(os, to_string_view(fmt),
-                  fmt::make_format_args<basic_printf_context_t<Char>>(args...));
+      detail::to_string_view(fmt),
+      dcc::fmt::make_format_args<basic_printf_context_t<char_t<S>>>(args...));
 }
 
 FMT_MODULE_EXPORT_END

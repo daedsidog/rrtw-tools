@@ -272,7 +272,7 @@ int main(int argc, char **argv) {
                  sgr::unique(u.dictionary),
                  sgr::file(fmt::format("{}:{}", edu_filename, u.lineno)));
       for (size_t i = 0; i < problems.size(); ++i)
-        fmt::print(stderr, "\t {}. {}{}\n", i + 1,
+        fmt::print(stderr, "\t {} {}{}\n", fmt::format(fmt::fg(fmt::color::white), "{}.", i + 1),
                    string(int(log10(problems.size())) - int(log10(i + 1)), ' '),
                    problems[i]);
     }

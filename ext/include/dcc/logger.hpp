@@ -70,6 +70,13 @@
 
 namespace dcc {
 
+  namespace logger {
+
+    void use_timestamps(bool);
+    bool use_timestamps();
+
+  }; // namespace logger
+
   void _append_timestamp(FILE* buf);
   void _write_lock();
   void _write_unlock();
@@ -77,10 +84,11 @@ namespace dcc {
   template <typename... T>
   void flogmsg(FILE* buf, std::string_view prefix,
                fmt::format_string<T...> format, T... args) {
-
 #ifndef DCC_DISABLE_LOGGER
     _write_lock();
-    _append_timestamp(buf);
+    if (logger::use_timestamps())
+      _append_timestamp(buf);
+
     fprintf(buf, "%s", prefix.data());
     fmt::print(buf, format, std::forward<T>(args)...);
     fprintf(buf, "\n");

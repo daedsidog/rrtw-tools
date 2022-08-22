@@ -1,7 +1,10 @@
 @echo off
+set _cwd=%CD%
+set _script_dir=%~dp0
+cd %_script_dir%
 if not '%vcscript%'=='' goto HaveBuildTools
 for /f "delims=" %%i in ('dir /s /b "C:\Program Files (x86)\Microsoft Visual Studio\*vcvars64.bat"') do set vcscript="%%i"
-if %vcscript%=="" echo Could not find VC BuildTools. Have you installed Visual Studio? & exit /b
+if %vcscript%=="" echo Could not find VC BuildTools. Have you installed Visual Studio? & cd %_cwd% & exit /b
 call %vcscript%
 
 :HaveBuildTools
@@ -14,6 +17,7 @@ cmake	-G Ninja ^
 
 set CL=/D_CRT_SECURE_NO_WARNINGS=1 %CL%
 cmake 	--build ../build/msvc/release
+cd %_cwd%
 exit /b
 
 :normalize_path

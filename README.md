@@ -1,3 +1,3 @@
 # rrtw-tools
 # Building
-Run `script/msvc-release.bbat` to build on Windows. You need a MSVC compiler.
+Run `script/msvc-release.bat` to build on Windows. You need a MSVC compiler.

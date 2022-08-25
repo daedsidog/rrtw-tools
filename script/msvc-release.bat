@@ -16,7 +16,7 @@ cmake	-G Ninja ^
 	-B ../build/msvc/release ../.
 
 set CL=/D_CRT_SECURE_NO_WARNINGS=1 %CL%
-cmake 	--build ../build/msvc/release
+cmake 	--build ../build/msvc/release -j 8
 cd %_cwd%
 exit /b
 

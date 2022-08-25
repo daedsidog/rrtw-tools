@@ -13,12 +13,15 @@ namespace dcc {
   int freadall(const char* path, std::string& outstr);
 
   // Compare two files.
-  // Return 0 if they are equal, -1 if error (sets errno) and the position
-  // of the first byte where the files differ if find_diffbyte is set to
-  // true, and 1 otherwise.
-  int fcmp(const char* src, const char* dst, bool find_diffbyte = false);
-  int fcmp(const std::string& src, const std::string& dst,
-           bool find_diffbyte = false);
+  // Return 0 if they are equal, -1 if error (sets errno) and 1 if the
+  // files are different.
+  //
+  // If given diffpos, will set it to be the position of the first byte
+  // where the bytes are different.
+  int fcmp(const char* src, const char* dst);
+  int fcmp(const char* src, const char* dst, size_t& diffpos);
+  int fcmp(const std::string& src, const std::string& dst);
+  int fcmp(const std::string& src, const std::string& dst, size_t& diffpos);
 
   // If the directory structure described by 'dir' does not exist, this
   // function will create it, and then attempt to open the file 'logname'

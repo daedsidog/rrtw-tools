@@ -16,7 +16,7 @@ using namespace dcc;
 vector<unit> parse_units(string_view edu_path) {
   ifstream f(edu_path.data());
   if (not f.is_open()) {
-    logerr("Could not open {}.", styled(edu_path, fmt::emphasis::underline));
+    dcc_logerr("Could not open {}.", styled(edu_path, fmt::emphasis::underline));
     exit(-1);
   }
 
@@ -94,7 +94,7 @@ vector<unit> parse_units(string_view edu_path) {
     units.push_back(current_unit);
   }
   if (units.empty()) {
-    logerr("No units were parsed.");
+    dcc_logerr("No units were parsed.");
     exit(-1);
   }
   return units;
@@ -103,7 +103,7 @@ vector<unit> parse_units(string_view edu_path) {
 unordered_map<string, battle_model> parse_battle_models(string_view dmb_path) {
   ifstream f(dmb_path.data());
   if (not f.is_open()) {
-    logerr("Could not open {}.", styled(dmb_path, fmt::emphasis::underline));
+    dcc_logerr("Could not open {}.", styled(dmb_path, fmt::emphasis::underline));
     exit(-1);
   }
 
@@ -154,7 +154,7 @@ unordered_map<string, battle_model> parse_battle_models(string_view dmb_path) {
     battle_models[current_battle_model.dictionary] = current_battle_model;
   }
   if (battle_models.empty()) {
-    logerr("No battle models were parsed.");
+    dcc_logerr("No battle models were parsed.");
     exit(-1);
   }
   return battle_models;

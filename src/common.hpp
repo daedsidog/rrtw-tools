@@ -5,6 +5,14 @@
 #include <vector>
 #include <unordered_map>
 
+struct flag {
+  static bool check_all_faction_textures;
+  static bool check_all_referenced_textures;
+  static bool generate_export_units;
+};
+
+extern flag flags;
+
 struct unit {
   bool mercenary;
   size_t lineno;

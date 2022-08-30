@@ -1,1 +1,0 @@
--DNDEBUG -Wall -Wextra -pedantic -O3 -s -flto=auto

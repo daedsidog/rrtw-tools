@@ -32,29 +32,33 @@
 #define dcc_logmsg(...) dcc::flogmsg(stdout, "", __VA_ARGS__)
 
 #ifdef DCC_LOGSRC
-#define DCC_SRC_STAMP                                                          \
-  dcc::fmt::styled(DCC_LOGSRC, dcc::fmt::fg(dcc::fmt::color::gray))
+#define DCC_SRC_STAMP dcc::sgr::file(DCC_LOGSRC)
 #define dcc_logerr(...)                                                        \
   dcc::flogmsg(                                                                \
-    stderr, dcc::fmt::format("[{}] ({}):", dcc::ERROR_STAMP, DCC_SRC_STAMP),   \
+    stderr,                                                                    \
+    dcc::fmt::format("[{}] ({}):", dcc::detail::error_stamp, DCC_SRC_STAMP),   \
     __VA_ARGS__)
 #define dcc_logwar(...)                                                        \
   dcc::flogmsg(                                                                \
-    stderr, dcc::fmt::format("[{}] ({}):", dcc::WARNING_STAMP, DCC_SRC_STAMP), \
+    stderr,                                                                    \
+    dcc::fmt::format("[{}] ({}):", dcc::detail::warning_stamp, DCC_SRC_STAMP), \
     __VA_ARGS__)
 #define dcc_logfat(...)                                                        \
   dcc::flogmsg(                                                                \
-    stderr, dcc::fmt::format("[{}] ({}):", dcc::FATAL_STAMP, DCC_SRC_STAMP),   \
+    stderr,                                                                    \
+    dcc::fmt::format("[{}] ({}):", dcc::detail::fatal_stamp, DCC_SRC_STAMP),   \
     __VA_ARGS__)
 #define dcc_loginf(...)                                                        \
-  dcc::flogmsg(stdout,                                                         \
-               dcc::fmt::format("[{}] ({}):", dcc::INFO_STAMP, DCC_SRC_STAMP), \
-               __VA_ARGS__)
+  dcc::flogmsg(                                                                \
+    stdout,                                                                    \
+    dcc::fmt::format("[{}] ({}):", dcc::detail::info_stamp, DCC_SRC_STAMP),    \
+    __VA_ARGS__)
 
 #ifndef NDEBUG
 #define dcc_logdbg(...)                                                        \
   dcc::flogmsg(                                                                \
-    stdout, dcc::fmt::format("[{}] ({}):", dcc::DEBUG_STAMP, DCC_SRC_STAMP),   \
+    stdout,                                                                    \
+    dcc::fmt::format("[{}] ({}):", dcc::detail::debug_stamp, DCC_SRC_STAMP),   \
     __VA_ARGS__);
 #else
 #define dcc_logdbg(...) (void)(0)
@@ -62,18 +66,22 @@
 
 #else
 #define dcc_logerr(...)                                                        \
-  dcc::flogmsg(stderr, dcc::fmt::format("[{}]:", dcc::ERROR_STAMP), __VA_ARGS__)
+  dcc::flogmsg(stderr, dcc::fmt::format("[{}]:", dcc::detail::error_stamp),    \
+               __VA_ARGS__)
 #define dcc_logwar(...)                                                        \
-  dcc::flogmsg(stderr, dcc::fmt::format("[{}]:", dcc::WARNING_STAMP),          \
+  dcc::flogmsg(stderr, dcc::fmt::format("[{}]:", dcc::detail::warning_stamp),  \
                __VA_ARGS__)
 #define dcc_logfat(...)                                                        \
-  dcc::flogmsg(stderr, dcc::fmt::format("[{}]:", dcc::FATAL_STAMP), __VA_ARGS__)
+  dcc::flogmsg(stderr, dcc::fmt::format("[{}]:", dcc::detail::fatal_stamp),    \
+               __VA_ARGS__)
 #define dcc_loginf(...)                                                        \
-  dcc::flogmsg(stdout, dcc::fmt::format("[{}]:", dcc::INFO_STAMP), __VA_ARGS__)
+  dcc::flogmsg(stdout, dcc::fmt::format("[{}]:", dcc::detail::info_stamp),     \
+               __VA_ARGS__)
 
 #ifndef NDEBUG
 #define dcc_logdbg(...)                                                        \
-  dcc::flogmsg(stdout, dcc::fmt::format("[{}]:", dcc::DEBUG_STAMP), __VA_ARGS__)
+  dcc::flogmsg(stdout, dcc::fmt::format("[{}]:", dcc::detail::debug_stamp),    \
+               __VA_ARGS__)
 #else
 #define dcc_logdbg(...) (void)(0)
 #endif
@@ -81,22 +89,36 @@
 
 namespace dcc {
 
-  constexpr size_t MAX_STAMP_STRLEN = 64;
-  constexpr auto FATAL_STAMP =
-    fmt::styled("FATAL", fmt::emphasis::bold | fmt::fg(fmt::color::red));
-  constexpr auto ERROR_STAMP = fmt::styled("ERROR", fmt::fg(fmt::color::red));
-  constexpr auto WARNING_STAMP =
-    fmt::styled("WARNING", fmt::fg(fmt::color::yellow));
-  constexpr auto INFO_STAMP = fmt::styled("INFO", fmt::fg(fmt::color::white));
-  constexpr auto DEBUG_STAMP =
-    fmt::styled("DEBUG", fmt::fg(fmt::color::orange));
+  namespace detail {
+
+    constexpr size_t date_strlen = 32;
+    constexpr auto fatal_stamp =
+      fmt::styled("FATAL", fmt::emphasis::bold | fmt::fg(fmt::color::red));
+    constexpr auto error_stamp = fmt::styled("ERROR", fmt::fg(fmt::color::red));
+    constexpr auto warning_stamp =
+      fmt::styled("WARNING", fmt::fg(fmt::color::yellow));
+    constexpr auto info_stamp = fmt::styled("INFO", fmt::fg(fmt::color::white));
+    constexpr auto debug_stamp =
+      fmt::styled("DEBUG", fmt::fg(fmt::color::orange));
+
+  }; // namespace detail
 
   namespace sgr {
 
     void clear(std::string&);
 
+    size_t length(std::string_view);
+
+    template <typename T> std::string good(T t) {
+      return fmt::format("{}", fmt::styled(t, fmt::fg(fmt::color::green)));
+    }
+
+    template <typename T> std::string bad(T t) {
+      return fmt::format("{}", fmt::styled(t, fmt::fg(fmt::color::red)));
+    }
+
     template <typename T> std::string file(T t) {
-      return fmt::format("{}", fmt::styled(t, fmt::emphasis::underline));
+      return fmt::format("{}", fmt::styled(t, fmt::fg(fmt::color::dark_gray)));
     }
 
     template <typename T> std::string unique(T t) {
@@ -130,7 +152,7 @@ namespace dcc {
 #ifndef DCC_DISABLE_LOGGER
     std::string msg;
     if (logger::use_timestamps()) {
-      char date[MAX_STAMP_STRLEN];
+      char date[detail::date_strlen];
       time_t t = time(0);
       struct tm* tm;
       tm = gmtime(&t);
@@ -138,7 +160,7 @@ namespace dcc {
       msg = fmt::format("[{}] {}{}", fmt::format(fg(fmt::color::gray), date),
                         prefix, fmt::format(format, std::forward<T>(args)...));
     } else
-      msg = fmt::format("{}{}", prefix,
+      msg = fmt::format("{} {}", prefix,
                         fmt::format(format, std::forward<T>(args)...));
 
     // Check whether or not the standard output buffers are being redirected. If
@@ -150,7 +172,7 @@ namespace dcc {
     } else
       sgr::clear(msg);
     _write_lock();
-    fmt::print(buf, "{}", msg);
+    fmt::print(buf, "{}\n", msg);
     _write_unlock();
 #endif
   }

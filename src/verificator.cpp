@@ -17,6 +17,12 @@ namespace fs = std::filesystem;
 #define ROOT_MOD_DIR "../../RIS"
 #endif
 
+namespace flags {
+bool check_all_faction_textures = false;
+bool check_all_referenced_textures = false;
+bool generate_export_units = false;
+}; // namespace flags
+
 constexpr char COMMENT_SYMBOL = (char)172;
 
 int main(int argc, char **argv) {
@@ -28,7 +34,6 @@ int main(int argc, char **argv) {
   string en_strs_filename = "data/string_overrides/en.strings";
   string dmb_filename = "data/descr_model_battle.txt";
   string root_dir = "";
-  flags = {};
 
   for (int i = 0; i < argc; ++i) {
     string s = argv[i];
@@ -36,13 +41,13 @@ int main(int argc, char **argv) {
       ignore_slave = true;
       dcc_loginf("Will not verify slave faction.");
     } else if (s == "--check-all-faction-textures") {
-      flags.check_all_faction_textures = true;
+      flags::check_all_faction_textures = true;
       dcc_loginf("Will verify all unit owners for their textures.");
     } else if (s == "--check-all-referenced-textures") {
-      flags.check_all_referenced_textures = true;
+      flags::check_all_referenced_textures = true;
       dcc_loginf("Will verify all referenced textures.");
     } else if (s == "--generate-export-units") {
-      flags.generate_export_units = true;
+      flags::generate_export_units = true;
       dcc_loginf("Will skip verification and instead generate {} from {}.",
                  sgr::file(eu_filename), sgr::file(edu_filename));
     } else {
@@ -63,7 +68,7 @@ int main(int argc, char **argv) {
   vector<unit> units =
       parse_units(fmt::format("{}/{}", root_dir, edu_filename));
 
-  if (flags.generate_export_units) {
+  if (flags::generate_export_units) {
     ofstream eu(fmt::format("{}/{}", root_dir, eu_filename));
     if (not eu) {
       dcc_logerr("Could not open {} for writing: {}.", sgr::file(eu_filename),
@@ -211,7 +216,7 @@ int main(int argc, char **argv) {
               "Missing default texture for {} at {}.", sgr::semiunique(soldier),
               sgr::file(fmt::format("{}:{}", dmb_filename,
                                     battle_models[soldier].lineno))));
-        if (flags.check_all_faction_textures) {
+        if (flags::check_all_faction_textures) {
           for (const auto &owner : u.owners) {
             if (ignore_slave and owner == "slave")
               continue;
@@ -234,7 +239,8 @@ int main(int argc, char **argv) {
             [&problems, &soldier, &missing_textures, dmb_filename,
              root_dir](unordered_map<string, texture> textures) {
               for (const auto &[owner, texture] : textures) {
-                if (not flags.check_all_referenced_textures and owner != "default")
+                if (not flags::check_all_referenced_textures and
+                    owner != "default")
                   continue;
 
                 // For some reason, the game's files reference by one extension,

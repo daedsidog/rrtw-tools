@@ -12,8 +12,8 @@ include_directories(SYSTEM ${EXTERN_INC_DIR})
 link_directories(${CMAKE_SOURCE_DIR}/ext/lib)
 
 add_library(common STATIC ${SRC_DIR}/common.cpp)
-file(GLOB libs ext/lib/*)
+file(GLOB dcc_libs ${CMAKE_SOURCE_DIR}/${DCC_LIB_DIR}/*)
 
 add_executable(verificator ${SRC_DIR}/verificator.cpp)
-target_link_libraries(common ${libs})
-target_link_libraries(verificator common ${libs})
+target_link_libraries(common ${dcc_libs})
+target_link_libraries(verificator common ${dcc_libs})

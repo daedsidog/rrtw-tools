@@ -2,16 +2,8 @@
 #define RRT_COMMON_HPP
 
 #include <string>
-#include <vector>
 #include <unordered_map>
-
-struct flag {
-  static bool check_all_faction_textures;
-  static bool check_all_referenced_textures;
-  static bool generate_export_units;
-};
-
-extern flag flags;
+#include <vector>
 
 struct unit {
   bool mercenary;
@@ -42,6 +34,7 @@ const std::string get_mod_root_dir(std::string_view path);
 
 std::vector<unit> parse_units(std::string_view export_descr_unit_file);
 
-std::unordered_map<std::string, battle_model> parse_battle_models(std::string_view descr_model_battle_file);
+std::unordered_map<std::string, battle_model>
+parse_battle_models(std::string_view descr_model_battle_file);
 
 #endif

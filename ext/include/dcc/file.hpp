@@ -412,11 +412,11 @@ namespace dcc {
           }
           switch (enc) {
           case encoding::utf16:
-            if (bpos == byte2 or bpos == byte4)
+            if (bpos == byte1 or bpos == byte3)
               continue;
             break;
           case encoding::utf32:
-            if (bpos != byte1)
+            if (bpos != byte4)
               continue;
             break;
           default:

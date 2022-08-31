@@ -83,16 +83,16 @@ void verify_strat_models() {
     unordered_set<string> handled_models;
     vector<string> problems;
 
-    // strat_cards
-    for (const auto& [owner, scstr] : entry.strat_cards) {
-      if (owner == "slave" and g::ignore_slave)
-        continue;
-      if (not fs::exists(scstr)) {
-        problems.push_back(
-          fmt::format("strat_card {} missing from path for {}.",
-                      sgr::file(scstr), sgr::unique(owner)));
-      }
-    }
+    // // strat_cards
+    // for (const auto& [owner, scstr] : entry.strat_cards) {
+    //   if (owner == "slave" and g::ignore_slave)
+    //     continue;
+    //   if (not fs::exists(scstr)) {
+    //     problems.push_back(
+    //       fmt::format("strat_card {} missing from path for {}.",
+    //                   sgr::file(scstr), sgr::unique(owner)));
+    //   }
+    // }
     for (const auto& [owner, modelstr] : entry.models) {
       if (owner == "slave" and g::ignore_slave)
         continue;
@@ -121,8 +121,8 @@ void verify_strat_models() {
             sgr::file(fmt::format("{}:{}", g::dms_filename, sm.lineno))));
           got_default_pbr_tex = false;
         }
-        else if (not fs::exists(ddspath(sm.textures.at("default").path))) {
-          texture& t = sm.textures.at("default");
+        else if (not fs::exists(ddspath(sm.pbr_textures.at("default").path))) {
+          texture& t = sm.pbr_textures.at("default");
           problems.push_back(fmt::format(
             "Default texture {} for {} is missing from path at {}.",
             sgr::file(ddspath(t.path)), sgr::semiunique(modelstr),
@@ -479,7 +479,7 @@ int main(int argc, char** argv) {
     string s = argv[i];
     if (s == "--ignore-slave")
       g::ignore_slave = true;
-    else if (s == "--check-all-faction-paths") {
+    else if (s == "--check-all-factions") {
       g::check_all_factions = true;
       g::check_all_referenced_paths = true;
     }

@@ -9,12 +9,14 @@ if %vcscript%=="" echo Could not find VC BuildTools. Have you installed Visual S
 call %vcscript%
 
 :HaveBuildTools
+call "ext/dcc/script/msvc-release.bat"
 call :normalize_path "ext/bin/ninja.exe"
 cmake	-G Ninja ^
 	-DCMAKE_MAKE_PROGRAM=%retval% ^
         -DCMAKE_BUILD_TYPE=RELEASE ^
       	-DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreadedDLL" ^
-        -DDCC_LIB_DIR=ext/lib/msvc ^
+        -DDCC_LIB_DIR=ext/dcc/build/msvc/release ^
+        -DSTATIC_LIB_SUFFIX=lib ^
 	-B build/msvc/release .
 
 set CL=/D_CRT_SECURE_NO_WARNINGS=1 %CL%

@@ -2,4 +2,4 @@
 -Wall
 -Wextra
 -pedantic
--Iext/include
+-Iext/dcc/include

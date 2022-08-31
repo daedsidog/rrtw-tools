@@ -43,6 +43,7 @@ struct strat_model {
 };
 
 struct banner {
+  size_t lineno;
   std::unordered_set<std::string> models;
   std::unordered_set<std::string> outlines;
 };

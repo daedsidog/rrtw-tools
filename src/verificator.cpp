@@ -39,7 +39,39 @@ namespace g {
 
 }; // namespace g
 
-void verify_banners() {}
+void verify_banners() {
+  dcc_logmsg("Parsing {}...", sgr::file(g::db_filename));
+
+  unordered_map<string, banner> banners = parse_banners(g::db_filename);
+  dcc_logmsg("Verifying banners...");
+  for (const auto& [dict, ban] : banners) {
+    vector<string> problems;
+    for (const auto& model : ban.models) {
+      if (not fs::exists(model))
+        problems.push_back(fmt::format("Model {} missing from path.", model));
+    }
+    for (const auto& outl : ban.outlines) {
+      if (not fs::exists(outl))
+        problems.push_back(fmt::format("Model {} missing from path.", outl));
+    }
+    if (not problems.empty()) {
+      g::no_problems = false;
+      ++g::problem_count;
+      flogmsg(stderr, "", "\n{} {} at {}:",
+              fmt::format(fg(fmt::color::white), "{})", g::problem_count),
+              sgr::unique(dict),
+              sgr::file(fmt::format("{}:{}", g::db_filename, ban.lineno)));
+      for (size_t i = 0; i < problems.size(); ++i)
+        flogmsg(stderr, "", "\t {} {}{}",
+                fmt::format(fmt::fg(fmt::color::white), "{}.", i + 1),
+                string(int(log10(problems.size())) - int(log10(i + 1)), ' '),
+                problems[i]);
+    }
+  }
+  if (g::no_problems)
+    dcc_logmsg("All {} banners are valid.",
+               sgr::semiunique(banners.size()));
+}
 
 void verify_strat_models() {
   dcc_logmsg("Parsing {}...", sgr::file(g::dc_filename));
@@ -50,6 +82,8 @@ void verify_strat_models() {
 
   unordered_map<std::string, strat_model> strat_models;
   strat_models = parse_strat_models(g::dms_filename);
+
+  dcc_logmsg("Verifying character models...");
   for (const auto& [dict, entry] : strat_model_entries) {
     vector<string> problems;
     if (not fs::exists(entry.strat_card))
@@ -108,8 +142,46 @@ void verify_strat_models() {
             sgr::file(texture.path),
             sgr::file(fmt::format("{}:{}", g::dms_filename, texture.lineno))));
       }
+      if (strat_models[dict].path.empty())
+        problems.push_back(
+          fmt::format("No model_flexi for {} at {}.", sgr::unique(dict),
+                      sgr::file(fmt::format("{}:{}", g::dms_filename,
+                                            strat_models[dict].lineno))));
+      else if (not fs::exists(strat_models[dict].path))
+        problems.push_back(
+          fmt::format("Model {} is missthing from path at {}.",
+                      sgr::file(strat_models[dict].path),
+                      sgr::file(fmt::format("{}:{}", g::dms_filename,
+                                            strat_models[dict].lineno))));
+      if (strat_models[dict].nv_path.empty())
+        problems.push_back(fmt::format(
+          "no_variation model_flexi for {} at {}.", sgr::unique(dict),
+          sgr::file(
+            fmt::format("{}:{}", g::dms_filename, strat_models[dict].lineno))));
+      else if (not fs::exists(strat_models[dict].nv_path))
+        problems.push_back(
+          fmt::format("Model {} is missthing from path at {}.",
+                      sgr::file(strat_models[dict].nv_path),
+                      sgr::file(fmt::format("{}:{}", g::dms_filename,
+                                            strat_models[dict].lineno))));
+    }
+    if (not problems.empty()) {
+      g::no_problems = false;
+      ++g::problem_count;
+      flogmsg(stderr, "", "\n{} {} at {}:",
+              fmt::format(fg(fmt::color::white), "{})", g::problem_count),
+              sgr::unique(dict),
+              sgr::file(fmt::format("{}:{}", g::dc_filename, entry.lineno)));
+      for (size_t i = 0; i < problems.size(); ++i)
+        flogmsg(stderr, "", "\t {} {}{}",
+                fmt::format(fmt::fg(fmt::color::white), "{}.", i + 1),
+                string(int(log10(problems.size())) - int(log10(i + 1)), ' '),
+                problems[i]);
     }
   }
+  if (g::no_problems)
+    dcc_logmsg("All {} character models are valid.",
+               sgr::semiunique(strat_models.size()));
 }
 
 void generate_export_units(string_view progname) {

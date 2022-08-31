@@ -154,12 +154,23 @@ class banner_parser : public parser<banner> {
 public:
   banner_parser(string_view path) : parser(path) {
     partition = "banner";
+    comment = ";";
     entries["banner"] = [this]() {
       t.type = entry();
       t.lineno = lineno();
     };
-    entries["model"] = [this]() { t.models.insert(entry()); };
-    entries["outline"] = [this]() { t.outlines.insert(entry()); };
+    entries["standard_texture"] = [this](){
+      t.texture_paths.insert(fmt::format("data/{}", entry()));
+    };
+    entries["rebels_texture"] = [this](){
+      t.texture_paths.insert(fmt::format("data/{}", entry()));
+    };
+    entries["ally_texture"] = [this](){
+      t.texture_paths.insert(fmt::format("data/{}", entry()));
+    };
+    entries["routing_texture"] = [this](){
+      t.texture_paths.insert(fmt::format("data/{}", entry()));
+    };
   }
 };
 

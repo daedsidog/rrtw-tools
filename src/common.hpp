@@ -49,8 +49,7 @@ struct strat_model {
 struct banner {
   size_t lineno;
   std::string type;
-  std::unordered_set<std::string> models;
-  std::unordered_set<std::string> outlines;
+  std::unordered_set<std::string> texture_paths;
 };
 
 const std::string get_parent_dir(std::string_view path);

@@ -46,13 +46,9 @@ void verify_banners() {
   dcc_logmsg("Verifying banners...");
   for (const auto& ban : banners) {
     vector<string> problems;
-    for (const auto& model : ban.models) {
-      if (not fs::exists(model))
-        problems.push_back(fmt::format("Model {} missing from path.", model));
-    }
-    for (const auto& outl : ban.outlines) {
-      if (not fs::exists(outl))
-        problems.push_back(fmt::format("Model {} missing from path.", outl));
+    for (const auto& texpath : ban.texture_paths) {
+      if (not fs::exists(texpath))
+        problems.push_back(fmt::format("Texture {} missing from path.", sgr::file(texpath)));
     }
     if (not problems.empty()) {
       g::no_problems = false;

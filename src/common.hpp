@@ -26,16 +26,20 @@ struct battle_model {
   std::string dictionary;
   std::unordered_map<std::string, texture> textures;
   std::unordered_map<std::string, texture> pbr_textures;
+  std::unordered_set<std::string> model_paths;
 };
 
 struct strat_model_entry {
   size_t lineno;
-  std::string strat_card;
-  std::unordered_set<std::string> owners;
+  std::string type;
+  std::string last_faction;
+  std::unordered_map<std::string, std::string> models;
+  std::unordered_map<std::string, std::string> strat_cards;
 };
 
 struct strat_model {
   size_t lineno;
+  std::string type;
   std::string path;
   std::string nv_path;
   std::unordered_map<std::string, texture> textures;
@@ -44,6 +48,7 @@ struct strat_model {
 
 struct banner {
   size_t lineno;
+  std::string type;
   std::unordered_set<std::string> models;
   std::unordered_set<std::string> outlines;
 };
@@ -58,13 +63,12 @@ std::vector<unit> parse_units(std::string_view export_descr_unit_fname);
 std::unordered_map<std::string, battle_model>
 parse_battle_models(std::string_view descr_model_battle_fname);
 
-std::unordered_map<std::string, strat_model_entry>
+std::vector<strat_model_entry>
 parse_strat_model_entries(std::string_view descr_model_battle_fname);
 
 std::unordered_map<std::string, strat_model>
 parse_strat_models(std::string_view descr_model_strat_fname);
 
-std::unordered_map<std::string, banner>
-parse_banners(std::string_view descr_banners_fname);
+std::vector<banner> parse_banners(std::string_view descr_banners_fname);
 
 #endif

@@ -42,9 +42,9 @@ namespace g {
 void verify_banners() {
   dcc_logmsg("Parsing {}...", sgr::file(g::db_filename));
 
-  unordered_map<string, banner> banners = parse_banners(g::db_filename);
+  vector<banner> banners = parse_banners(g::db_filename);
   dcc_logmsg("Verifying banners...");
-  for (const auto& [dict, ban] : banners) {
+  for (const auto& ban : banners) {
     vector<string> problems;
     for (const auto& model : ban.models) {
       if (not fs::exists(model))
@@ -59,7 +59,7 @@ void verify_banners() {
       ++g::problem_count;
       flogmsg(stderr, "", "\n{} {} at {}:",
               fmt::format(fg(fmt::color::white), "{})", g::problem_count),
-              sgr::unique(dict),
+              sgr::unique(ban.type),
               sgr::file(fmt::format("{}:{}", g::db_filename, ban.lineno)));
       for (size_t i = 0; i < problems.size(); ++i)
         flogmsg(stderr, "", "\t {} {}{}",
@@ -69,108 +69,153 @@ void verify_banners() {
     }
   }
   if (g::no_problems)
-    dcc_logmsg("All {} banners are valid.",
-               sgr::semiunique(banners.size()));
+    dcc_logmsg("All {} banners are valid.", sgr::semiunique(banners.size()));
 }
 
 void verify_strat_models() {
   dcc_logmsg("Parsing {}...", sgr::file(g::dc_filename));
 
-  unordered_map<std::string, strat_model_entry> strat_model_entries;
+  vector<strat_model_entry> strat_model_entries;
   strat_model_entries = parse_strat_model_entries(g::dc_filename);
   dcc_logmsg("Parsing {}...", sgr::file(g::dms_filename));
 
   unordered_map<std::string, strat_model> strat_models;
   strat_models = parse_strat_models(g::dms_filename);
-
   dcc_logmsg("Verifying character models...");
-  for (const auto& [dict, entry] : strat_model_entries) {
+  for (const auto& entry : strat_model_entries) {
+    unordered_set<string> handled_models;
     vector<string> problems;
-    if (not fs::exists(entry.strat_card))
-      problems.push_back(fmt::format("strat_card {} is missing from path.",
-                                     sgr::file(entry.strat_card)));
-    if (not strat_models.contains(dict))
-      problems.push_back(fmt::format("No entry for {} found in {}.",
-                                     sgr::unique(dict),
-                                     sgr::file(g::dms_filename)));
-    else {
 
-      // PBR textures
-      for (const auto& owner : entry.owners) {
-        if (owner == "slave" and g::ignore_slave)
-          continue;
-        if (not strat_models[dict].pbr_textures.contains("default"))
-          problems.push_back(fmt::format(
-            "Missing {} pbr_texture for at {}.", sgr::unique("default"),
-            sgr::file(fmt::format("{}:{}", g::dms_filename, entry.lineno))));
-        else if (g::check_all_faction_textures)
-          problems.push_back(
-            fmt::format("Missing {} pbr_texture at {}.", sgr::unique(owner),
-                        sgr::file(fmt::format("{}:{}", g::dms_filename,
-                                              strat_models[dict].lineno))));
-      }
-      for (const auto& [owner, texture] : strat_models[dict].pbr_textures) {
-        if (not g::check_all_referenced_textures and owner != "default")
-          continue;
-        if (not fs::exists(fmt::format("{}.dds", texture.path)))
-          problems.push_back(fmt::format(
-            "{} texture {} missing from path at {}.", sgr::unique(owner),
-            sgr::file(texture.path),
-            sgr::file(fmt::format("{}:{}", g::dms_filename, texture.lineno))));
-      }
-
-      // Normal textures
-      for (const auto& owner : entry.owners) {
-        if (owner == "slave" and g::ignore_slave)
-          continue;
-        if (not strat_models[dict].textures.contains("default"))
-          problems.push_back(fmt::format(
-            "Missing {} texture for at {}.", sgr::unique("default"),
-            sgr::file(fmt::format("{}:{}", g::dms_filename, entry.lineno))));
-        else if (g::check_all_faction_textures)
-          problems.push_back(
-            fmt::format("Missing {} texture at {}.", sgr::unique(owner),
-                        sgr::file(fmt::format("{}:{}", g::dms_filename,
-                                              strat_models[dict].lineno))));
-      }
-      for (const auto& [owner, texture] : strat_models[dict].textures) {
-        if (not g::check_all_referenced_textures and owner != "default")
-          continue;
-        if (not fs::exists(fmt::format("{}.dds", texture.path)))
-          problems.push_back(fmt::format(
-            "{} texture {} missing from path at {}.", sgr::unique(owner),
-            sgr::file(texture.path),
-            sgr::file(fmt::format("{}:{}", g::dms_filename, texture.lineno))));
-      }
-      if (strat_models[dict].path.empty())
+    // strat_cards
+    for (const auto& [owner, scstr] : entry.strat_cards) {
+      if (owner == "slave" and g::ignore_slave)
+        continue;
+      if (not fs::exists(scstr)) {
         problems.push_back(
-          fmt::format("No model_flexi for {} at {}.", sgr::unique(dict),
-                      sgr::file(fmt::format("{}:{}", g::dms_filename,
-                                            strat_models[dict].lineno))));
-      else if (not fs::exists(strat_models[dict].path))
-        problems.push_back(
-          fmt::format("Model {} is missthing from path at {}.",
-                      sgr::file(strat_models[dict].path),
-                      sgr::file(fmt::format("{}:{}", g::dms_filename,
-                                            strat_models[dict].lineno))));
-      if (strat_models[dict].nv_path.empty())
-        problems.push_back(fmt::format(
-          "no_variation model_flexi for {} at {}.", sgr::unique(dict),
-          sgr::file(
-            fmt::format("{}:{}", g::dms_filename, strat_models[dict].lineno))));
-      else if (not fs::exists(strat_models[dict].nv_path))
-        problems.push_back(
-          fmt::format("Model {} is missthing from path at {}.",
-                      sgr::file(strat_models[dict].nv_path),
-                      sgr::file(fmt::format("{}:{}", g::dms_filename,
-                                            strat_models[dict].lineno))));
+          fmt::format("strat_card {} missing from path for {}.",
+                      sgr::file(scstr), sgr::unique(owner)));
+      }
     }
+    for (const auto& [owner, modelstr] : entry.models) {
+      if (owner == "slave" and g::ignore_slave)
+        continue;
+      if (not strat_models.contains(modelstr)) {
+        problems.push_back(fmt::format("No entry for {} found in {}.",
+                                       sgr::semiunique(modelstr),
+                                       sgr::file(g::dms_filename)));
+      }
+      else {
+        if (handled_models.contains(modelstr))
+          continue;
+        handled_models.insert(modelstr);
+
+        bool got_default_pbr_tex = true;
+        bool got_default_tex = true;
+        auto& sm = strat_models.at(modelstr);
+        auto ddspath = [](const string_view tpath) {
+          return fmt::format("{}.dds", tpath);
+        };
+
+        // PBR textures
+        if (not sm.pbr_textures.contains("default")) {
+          problems.push_back(fmt::format(
+            "Missing default pbr_texture for {} at {}.",
+            sgr::semiunique(modelstr),
+            sgr::file(fmt::format("{}:{}", g::dms_filename, sm.lineno))));
+          got_default_pbr_tex = false;
+        }
+        else if (not fs::exists(ddspath(sm.textures.at("default").path))) {
+          texture& t = sm.textures.at("default");
+          problems.push_back(fmt::format(
+            "Default texture {} for {} is missing from path at {}.",
+            sgr::file(ddspath(t.path)), sgr::semiunique(modelstr),
+            sgr::file(fmt::format("{}:{}", g::dms_filename, t.lineno))));
+          got_default_pbr_tex = false;
+        }
+        if (not sm.pbr_textures.contains(owner)) {
+          if (not got_default_pbr_tex or g::check_all_faction_textures) {
+            problems.push_back(fmt::format(
+              "Missing {} pbr_texture at for {} at {}.", sgr::unique(owner),
+              sgr::semiunique(modelstr),
+              sgr::file(fmt::format("{}:{}", g::dms_filename, sm.lineno))));
+          }
+        }
+        else if (not got_default_pbr_tex or g::check_all_referenced_textures) {
+          texture& t = sm.textures.at(owner);
+          if (not fs::exists(ddspath(t.path))) {
+            problems.push_back(fmt::format(
+              "Texture {} for {} for {} missing from path at {}.",
+              sgr::file(ddspath(t.path)), sgr::semiunique(modelstr),
+              sgr::unique(owner),
+              sgr::file(fmt::format("{}:{}", g::dms_filename, t.lineno))));
+          }
+        }
+
+        // Regular textures
+        if (not sm.textures.contains("default")) {
+          problems.push_back(fmt::format(
+            "Missing default texture for {} at {}.", sgr::semiunique(modelstr),
+            sgr::file(fmt::format("{}:{}", g::dms_filename, sm.lineno))));
+          got_default_tex = false;
+        }
+        else if (not fs::exists(ddspath(sm.textures.at("default").path))) {
+          texture& t = sm.textures.at("default");
+          problems.push_back(fmt::format(
+            "Default texture {} for {} is missing from path at {}.",
+            sgr::file(ddspath(t.path)), sgr::semiunique(modelstr),
+            sgr::file(fmt::format("{}:{}", g::dms_filename, t.lineno))));
+          got_default_tex = false;
+        }
+        if (not sm.textures.contains(owner)) {
+          if (not got_default_tex or g::check_all_faction_textures) {
+            problems.push_back(fmt::format(
+              "Missing {} texture at for {} at {}.", sgr::unique(owner),
+              sgr::semiunique(modelstr),
+              sgr::file(fmt::format("{}:{}", g::dms_filename, sm.lineno))));
+          }
+        }
+        else if (not got_default_tex or g::check_all_referenced_textures) {
+          texture& t = sm.textures.at(owner);
+          if (not fs::exists(ddspath(t.path))) {
+            problems.push_back(fmt::format(
+              "Texture {} for {} for {} missing from path at {}.",
+              sgr::file(ddspath(t.path)), sgr::semiunique(modelstr),
+              sgr::unique(owner),
+              sgr::file(fmt::format("{}:{}", g::dms_filename, t.lineno))));
+          }
+        }
+
+        // Models
+        if (sm.path.empty()) {
+          problems.push_back(fmt::format(
+            "Missing model_flexi for {} at {}.", sgr::semiunique(modelstr),
+            sgr::file(fmt::format("{}:{}", g::dms_filename, sm.lineno))));
+        }
+        else if (not fs::exists(sm.path)) {
+          problems.push_back(fmt::format(
+            "Model {} is missing from path at {}.", sgr::file(sm.path),
+            sgr::file(fmt::format("{}:{}", g::dms_filename, sm.lineno))));
+        }
+        if (sm.nv_path.empty()) {
+          problems.push_back(fmt::format(
+            "Missing no_variation model_flexi for {} at {}.",
+            sgr::unique(modelstr),
+            sgr::file(fmt::format("{}:{}", g::dms_filename, sm.lineno))));
+        }
+        else if (sm.nv_path != sm.path and not fs::exists(sm.nv_path)) {
+          problems.push_back(fmt::format(
+            "Model {} is missing from path at {}.", sgr::file(sm.nv_path),
+            sgr::file(fmt::format("{}:{}", g::dms_filename, sm.lineno))));
+        }
+      }
+    }
+
     if (not problems.empty()) {
       g::no_problems = false;
       ++g::problem_count;
       flogmsg(stderr, "", "\n{} {} at {}:",
               fmt::format(fg(fmt::color::white), "{})", g::problem_count),
-              sgr::unique(dict),
+              sgr::unique(entry.type),
               sgr::file(fmt::format("{}:{}", g::dc_filename, entry.lineno)));
       for (size_t i = 0; i < problems.size(); ++i)
         flogmsg(stderr, "", "\t {} {}{}",
@@ -324,7 +369,7 @@ void verify_units() {
 
     // Verify textures
     unordered_set<string> missing_textures;
-    auto verify_troop_textures =
+    auto verify_bm =
       [&battle_models, &problems, &u,
        &missing_textures](vector<string> troops) -> void {
       for (const auto& soldier : troops) {
@@ -335,6 +380,16 @@ void verify_units() {
           continue;
         }
 
+        // Verify models
+        for (const auto& mpath : battle_models.at(soldier).model_paths) {
+          if (not fs::exists(mpath)) {
+            problems.push_back(fmt::format("Model {} missing from path for {}.",
+                                           sgr::file(mpath),
+                                           sgr::semiunique(soldier)));
+          }
+        }
+
+        // Verify textures
         const auto& textures = battle_models[soldier].textures;
         const auto& pbr_textures = battle_models[soldier].pbr_textures;
         if (not pbr_textures.contains("default"))
@@ -392,8 +447,8 @@ void verify_units() {
         check_disk_for_textures(textures);
       }
     };
-    verify_troop_textures(u.soldiers);
-    verify_troop_textures(u.officers);
+    verify_bm(u.soldiers);
+    verify_bm(u.officers);
 
     if (not problems.empty()) {
       g::no_problems = false;

@@ -55,7 +55,8 @@ public:
       if (owner_and_path.size() == 1) {
         tex.path = entry();
         t.textures["default"] = tex;
-      } else {
+      }
+      else {
         tex.path = owner_and_path[1];
         t.textures[owner_and_path[0]] = tex;
       }
@@ -67,13 +68,99 @@ public:
       if (owner_and_path.size() == 1) {
         tex.path = entry();
         t.pbr_textures["default"] = tex;
-      } else {
+      }
+      else {
         tex.path = owner_and_path[1];
         t.pbr_textures[owner_and_path[0]] = tex;
       }
     };
+    entries["model_flexi"] = [this]() {
+      t.model_paths.insert(strtok(entry())[0]);
+    };
+    entries["model_flexi_m"] = [this]() {
+      t.model_paths.insert(strtok(entry())[0]);
+    };
+    entries["no_variation model_flexi"] = [this]() {
+      t.model_paths.insert(strtok(entry())[0]);
+    };
+    entries["no_variation model_flexi_m"] = [this]() {
+      t.model_paths.insert(strtok(entry())[0]);
+    };
     key = [this]() { return t.dictionary; };
   };
+};
+
+class character_parser : public parser<strat_model_entry, string> {
+public:
+  character_parser(string_view path) : parser(path) {
+    partition = "type";
+    comment = ";";
+    entries["type"] = [this]() {
+      t.type = entry();
+      t.lineno = lineno();
+    };
+    entries["faction"] = [this]() { t.last_faction = entry(); };
+    entries["strat_model"] = [this]() { t.models[t.last_faction] = entry(); };
+    entries["strat_card"] = [this]() {
+      t.strat_cards[t.last_faction] = entry();
+    };
+  };
+};
+
+class strat_model_parser : public parser<strat_model, string> {
+public:
+  strat_model_parser(string_view path) : parser(path) {
+    partition = "type";
+    comment = ";";
+    entries["type"] = [this]() {
+      t.lineno = lineno();
+      t.type = entry();
+    };
+    entries["model_flexi"] = [this]() { t.path = strtok(entry())[0]; };
+    entries["no_variation model_flexi"] = [this]() {
+      t.nv_path = strtok(entry())[0];
+    };
+    entries["texture"] = [this]() {
+      vector<string> owner_and_path = strtok(entry());
+      texture tex;
+      tex.lineno = lineno();
+      if (owner_and_path.size() == 1) {
+        tex.path = entry();
+        t.textures["default"] = tex;
+      }
+      else {
+        tex.path = owner_and_path[1];
+        t.textures[owner_and_path[0]] = tex;
+      }
+    };
+    entries["pbr_texture"] = [this]() {
+      vector<string> owner_and_path = strtok(entry());
+      texture tex;
+      tex.lineno = lineno();
+      if (owner_and_path.size() == 1) {
+        tex.path = entry();
+        t.pbr_textures["default"] = tex;
+      }
+      else {
+        tex.path = owner_and_path[1];
+        t.pbr_textures[owner_and_path[0]] = tex;
+      }
+    };
+    key = [this]() { return t.type; };
+  };
+};
+
+class banner_parser : public parser<banner> {
+public:
+  banner_parser(string_view path) : parser(path) {
+    partition = "banner";
+    entries["banner"] = [this]() {
+      t.type = entry();
+      t.lineno = lineno();
+    };
+    entries["model"] = [this]() { t.models.insert(entry()); };
+    entries["outline"] = [this]() { t.outlines.insert(entry()); };
+  }
 };
 
 vector<unit> parse_units(string_view edu_path) {
@@ -94,4 +181,24 @@ unordered_map<string, battle_model> parse_battle_models(string_view dmb_path) {
     exit(-1);
   }
   return battle_models;
+}
+
+vector<strat_model_entry> parse_strat_model_entries(string_view dc_path) {
+  character_parser p(dc_path);
+  vector<strat_model_entry> v;
+  if (p.parse(v) == -1) {
+    dcc_logerr("Could not parse {}.", sgr::file(dc_path));
+    exit(-1);
+  }
+  return v;
+}
+
+vector<banner> parse_banners(string_view db_path) {
+  banner_parser p(db_path);
+  vector<banner> v;
+  if (p.parse(v) == -1) {
+    dcc_logerr("Could not parse {}.", sgr::file(db_path));
+    exit(-1);
+  }
+  return v;
 }

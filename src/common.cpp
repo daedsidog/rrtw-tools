@@ -159,17 +159,17 @@ public:
       t.type = entry();
       t.lineno = lineno();
     };
-    entries["standard_texture"] = [this](){
-      t.texture_paths.insert(fmt::format("data/{}", entry()));
+    entries["standard_texture"] = [this]() {
+      t.texture_paths.insert(fmt::format("data/{}.dds", entry()));
     };
-    entries["rebels_texture"] = [this](){
-      t.texture_paths.insert(fmt::format("data/{}", entry()));
+    entries["rebels_texture"] = [this]() {
+      t.texture_paths.insert(fmt::format("data/{}.dds", entry()));
     };
-    entries["ally_texture"] = [this](){
-      t.texture_paths.insert(fmt::format("data/{}", entry()));
+    entries["ally_texture"] = [this]() {
+      t.texture_paths.insert(fmt::format("data/{}.dds", entry()));
     };
-    entries["routing_texture"] = [this](){
-      t.texture_paths.insert(fmt::format("data/{}", entry()));
+    entries["routing_texture"] = [this]() {
+      t.texture_paths.insert(fmt::format("data/{}.dds", entry()));
     };
   }
 };

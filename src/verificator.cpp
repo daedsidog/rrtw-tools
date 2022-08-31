@@ -31,7 +31,7 @@ namespace g {
   bool check_all_referenced_paths = false;
   bool ignore_slave = false;
   bool generate_export_units = false;
-  bool verify_strat_models = false;
+  bool verify_characters = false;
   bool verify_banners = false;
   bool no_problems = true;
   int problem_count = 0;
@@ -48,7 +48,8 @@ void verify_banners() {
     vector<string> problems;
     for (const auto& texpath : ban.texture_paths) {
       if (not fs::exists(texpath))
-        problems.push_back(fmt::format("Texture {} missing from path.", sgr::file(texpath)));
+        problems.push_back(
+          fmt::format("Texture {} missing from path.", sgr::file(texpath)));
     }
     if (not problems.empty()) {
       g::no_problems = false;
@@ -77,7 +78,7 @@ void verify_strat_models() {
 
   unordered_map<std::string, strat_model> strat_models;
   strat_models = parse_strat_models(g::dms_filename);
-  dcc_logmsg("Verifying character models...");
+  dcc_logmsg("Verifying characters...");
   for (const auto& entry : strat_model_entries) {
     unordered_set<string> handled_models;
     vector<string> problems;
@@ -478,16 +479,16 @@ int main(int argc, char** argv) {
     string s = argv[i];
     if (s == "--ignore-slave")
       g::ignore_slave = true;
-    else if (s == "--check-all-faction-textures") {
+    else if (s == "--check-all-faction-paths") {
       g::check_all_factions = true;
       g::check_all_referenced_paths = true;
     }
-    else if (s == "--check-all-referenced-textures")
+    else if (s == "--check-all-referenced-paths")
       g::check_all_referenced_paths = true;
     else if (s == "--generate-export-units")
       g::generate_export_units = true;
-    else if (s == "--verify-strat-models")
-      g::verify_strat_models = true;
+    else if (s == "--verify-characters")
+      g::verify_characters = true;
     else if (s == "--verify-banners")
       g::verify_banners = true;
     else {
@@ -514,7 +515,7 @@ int main(int argc, char** argv) {
       dcc_loginf("Will not verify slave faction.");
   };
 
-  if (g::verify_strat_models) {
+  if (g::verify_characters) {
     print_flag_info();
     verify_strat_models();
   }

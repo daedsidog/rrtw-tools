@@ -183,6 +183,16 @@ unordered_map<string, battle_model> parse_battle_models(string_view dmb_path) {
   return battle_models;
 }
 
+unordered_map<string, strat_model> parse_strat_models(string_view dms_path) {
+  strat_model_parser p(dms_path);
+  unordered_map<string, strat_model> strat_models;
+  if (p.parse(strat_models) == -1) {
+    dcc_logerr("Could not parse {}.", sgr::file(dms_path));
+    exit(-1);
+  }
+  return strat_models;
+}
+
 vector<strat_model_entry> parse_strat_model_entries(string_view dc_path) {
   character_parser p(dc_path);
   vector<strat_model_entry> v;

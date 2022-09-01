@@ -265,14 +265,16 @@ void generate_export_units(string_view progname) {
   // This is a very primitive solution, and I am in no way proud of it, but my
   // quest in leveraging the standard library for mystic conversion between
   // encodings ended poorly, so I just did it the only fashioned way.
-  eu << 0xfeff; // UTF16LE BOM
+  char nullbyte = 0x0;
+  wchar_t bom = 0xfeff; // UTF16LE BOM
+  eu.write((char*)&bom, sizeof(wchar_t));
   for (size_t i = 0, j = 0; i != eustr.length() - 1; ++j) {
     if (j % 2 == 0) {
-      eu << eustr[i];
+      eu.write((char*)(eustr.data() + i), sizeof(char));
       ++i;
     }
     else
-      eu << 0x0;
+      eu.write((char*)&nullbyte, sizeof(char));
   }
   dcc_logmsg("Finished generating {}.", sgr::file(g::eu_filename));
 }
